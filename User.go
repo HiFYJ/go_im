@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 /**
 登录的用户的结构体
@@ -69,6 +72,25 @@ func (this *User) DoMessage(msg string) {
 			this.SendMessage(onlineMsg)
 		}
 		this.server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		//	处理的消息格式 rename|张三
+		newName := strings.Split(msg, "|")[1]
+		//判断name是否存在
+		_, ok := this.server.OnlineMap[newName]
+		if ok {
+			this.SendMessage("当前用户名已被占用\n")
+		} else {
+			this.server.mapLock.Lock()
+			//删除原有key-value
+			delete(this.server.OnlineMap, this.Name)
+			//新增
+			this.server.OnlineMap[newName] = this
+			this.server.mapLock.Unlock()
+
+			this.Name = newName
+			this.SendMessage("已更新用户名:" + this.Name + "\n")
+		}
+
 	} else {
 		this.server.BroadCast(this, msg)
 	}
