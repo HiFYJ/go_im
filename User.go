@@ -61,5 +61,20 @@ func (this *User) Offline() {
 
 //用户发送消息
 func (this *User) DoMessage(msg string) {
-	this.server.BroadCast(this, msg)
+	if msg == "who" {
+		//处理消息为who的请求
+		this.server.mapLock.Lock()
+		for _, user := range this.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "在线……\n"
+			this.SendMessage(onlineMsg)
+		}
+		this.server.mapLock.Unlock()
+	} else {
+		this.server.BroadCast(this, msg)
+	}
+}
+
+//给指定用户发送消息
+func (this *User) SendMessage(msg string) {
+	this.conn.Write([]byte(msg))
 }
