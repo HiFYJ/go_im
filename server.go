@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -69,6 +70,9 @@ func (this *Server) Handler(conn net.Conn) {
 		this.BroadCast(user, "已上线")*/
 	user.Online()
 
+	//监听用户是否活跃的channel
+	isLive := make(chan bool)
+
 	//接收客户端发送的消息
 	go func() {
 		buf := make([]byte, 40096)
@@ -89,10 +93,32 @@ func (this *Server) Handler(conn net.Conn) {
 			//广播消息
 			//this.BroadCast(user, msg)
 			user.DoMessage(msg)
+
+			//	用户任意消息表示活跃
+			isLive <- true
+
 		}
 	}()
 
-	select {}
+	for {
+		select {
+		case <-isLive:
+		//	表示当前用户是活跃的，要重置定时器
+		//不做任何事情，为了激活select，更新下面的定时器
+
+		case <-time.After(time.Second * 20):
+			//	已经超时，将当前的User强制的关闭、
+			user.SendMessage("超时被强制下线\n")
+
+			close(user.C) //销毁资源
+
+			conn.Close() //关闭连接
+
+			//退出当前handler
+			return //使用runtime.Goexit()也可以
+
+		}
+	}
 }
 
 /*广播消息方法*/
