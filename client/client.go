@@ -72,7 +72,8 @@ func (client *Client) Run() {
 		//	根据flag处理业务
 		switch client.flag {
 		case 1:
-			fmt.Println("进入公聊模式...")
+			//fmt.Println("进入公聊模式...")
+			client.PublicChat()
 			break
 		case 2:
 			fmt.Println("私聊模式...")
@@ -86,6 +87,7 @@ func (client *Client) Run() {
 	}
 }
 
+//更新用户名功能
 func (client *Client) UpdateName() bool {
 	fmt.Println(">>>>>请输入用户名:")
 	fmt.Scanln(&client.Name)
@@ -97,6 +99,33 @@ func (client *Client) UpdateName() bool {
 		return false
 	}
 	return true
+}
+
+//公聊功能
+func (client *Client) PublicChat() {
+
+	//	提示消息
+	var msg string
+	fmt.Println(">>>>>请输入消息内容，exit退出。")
+	fmt.Scanln(&msg)
+
+	for msg != "exit" {
+		//	发送给服务器
+		//消息不为空则发送
+		if len(msg) != 0 {
+			sendMsg := msg + "\n"
+			_, err := client.conn.Write([]byte(sendMsg))
+			if err != nil {
+				fmt.Println("conn write error:", err)
+				break
+			}
+		}
+
+		//	置空
+		msg = ""
+		fmt.Println(">>>>>请输入消息内容，exit退出。")
+		fmt.Scanln(&msg)
+	}
 }
 
 //处理server回应的消息，直接显示到标准输出
